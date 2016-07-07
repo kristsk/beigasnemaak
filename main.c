@@ -1,15 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <glob.h>
 #include <sys/time.h>
 #include <errno.h>
 
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "OCDFAInspection"
 int main(int argc, char *argv[]) {
 
     if (argc != 3) {
+
         printf("Usage:\n\tbeigasnamaakc <quoted_glob_for_source_rgba> <output_rgba_filename>\n");
-        printf("Example:\n\t beigasnamaakc \"../manyPng/*.rgba\" sum.rgba\n");
+        printf("Example:\n\tbeigasnamaakc \"../manyPng/*.rgba\" sum.rgba\n");
         printf("To convert png to rgba:\n\tls *.png | xargs -t -I {} convert {} -crop 500x500+0+0 {}.rgba\n");
         printf("To convert result rgba to png:\n\tconvert -size 500x500 -depth 8 sum.rgba sum.png\n");
         exit(-1);
@@ -23,6 +25,7 @@ int main(int argc, char *argv[]) {
     glob_t input_files_glob;
     int glob_result = glob(argv[1], GLOB_ERR, NULL, &input_files_glob);
     if (glob_result) {
+
         printf("Fatal: Glob \"%s\" failed with error %d\n", argv[1], glob_result);
         exit(-2);
     }
@@ -40,6 +43,7 @@ int main(int argc, char *argv[]) {
         FILE *input_file = fopen(input_files_glob.gl_pathv[file_number], "r");
 
         if (input_file == NULL) {
+
             printf("could not open, error %d", errno);
             exit(-2);
         }
@@ -49,6 +53,7 @@ int main(int argc, char *argv[]) {
         printf("read %d pixels, ", (int) pixels_read);
 
         if (pixels_read != 500 * 500) {
+
             printf("it is not enough\n");
             exit(-2);
         }
@@ -62,10 +67,12 @@ int main(int argc, char *argv[]) {
             uint16_t dy = (uint16_t) ((i % 500) - 249);
 
             if ((dx * dx) + (dy * dy) > (250 * 250)) {
+
                 continue;
             }
 
             switch (pixels[i]) {
+
                 case 0xffc70000:
                     increment = 1;
                     break;
@@ -134,24 +141,68 @@ int main(int argc, char *argv[]) {
 
         if (sums[i] > 0) {
 
-            uint8_t p = (uint8_t) ((sums[i] * 230) / max_sum);
+            switch (sums[i]) {
 
-            pixels[i] = (
-                    (uint32_t) (0xff << 24) +
-                    (uint32_t) ((230 - p) << 16) +
-                    (uint32_t) ((230 - p) << 8) +
-                    (uint32_t) ((230 - p) << 0)
-            );
+                case 1:
+                    pixels[i] = 0xffc70000;
+                    break;
+                case 2:
+                    pixels[i] = 0xfffe3400;
+                    break;
+                case 3:
+                    pixels[i] = 0xfffe7900;
+                    break;
+                case 4 ... 5:
+                    pixels[i] = 0xfffea21a;
+                    break;
+                case 6 ... 7:
+                    pixels[i] = 0xfffed053;
+                    break;
+                case 8 ... 10:
+                    pixels[i] = 0xfffef086;
+                    break;
+                case 11 ... 14:
+                    pixels[i] = 0xfffefefe;
+                    break;
+                case 15 ... 20:
+                    pixels[i] = 0xffc0f7fe;
+                    break;
+                case 21 ... 31:
+                    pixels[i] = 0xff00e5fe;
+                    break;
+                case 32 ... 45:
+                    pixels[i] = 0xff00bcfe;
+                    break;
+                case 46 ... 66:
+                    pixels[i] = 0xff0073fe;
+                    break;
+                case 67 ... 95:
+                    pixels[i] = 0xff003ffe;
+                    break;
+                case 96 ... 140:
+                    pixels[i] = 0xff0000c7;
+                    break;
+                case 141 ... 220:
+                    pixels[i] = 0xff0000a0;
+                    break;
+                case 221 ... 65535:
+                    pixels[i] = 0xff000080;
+                    break;
+                default:
+                    pixels[i] = 0;
+                    break;
+            }
         }
         else {
 
-            pixels[i] = 0xffc0f7fe; // rgb(0xfe, 0xf7, 0xc0)
+            pixels[i] = 0;
         }
     }
 
     FILE *output_file = fopen(argv[2], "w");
 
     if (output_file == NULL) {
+
         printf("Could not open output file %s, error: %d\n", argv[2], errno);
         exit(-2);
     }
@@ -163,4 +214,4 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
-
+#pragma clang diagnostic pop
